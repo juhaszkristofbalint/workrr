@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Harbor Electric logo">
+  <rect width="128" height="128" rx="28" fill="#1E40AF"/>
+  <path d="M34 78 L64 28 L94 78 Z" fill="white"/>
+  <rect x="58" y="70" width="12" height="30" fill="white"/>
+</svg>

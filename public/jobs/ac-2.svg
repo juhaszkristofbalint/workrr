@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" role="img" aria-label="Indoor AC vent">
+  <rect width="640" height="480" fill="#F1F5F9"/>
+  <rect x="80" y="120" width="480" height="220" rx="8" fill="#CBD5E1"/>
+  <g stroke="#64748B" stroke-width="10">
+    <line x1="120" y1="170" x2="520" y2="170"/>
+    <line x1="120" y1="210" x2="520" y2="210"/>
+    <line x1="120" y1="250" x2="520" y2="250"/>
+    <line x1="120" y1="290" x2="520" y2="290"/>
+  </g>
+</svg>

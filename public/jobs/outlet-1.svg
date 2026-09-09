@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" role="img" aria-label="Kitchen wall outlet">
+  <rect width="640" height="480" fill="#E8DCC8"/>
+  <rect x="0" y="360" width="640" height="120" fill="#C4B49A"/>
+  <rect x="248" y="150" width="144" height="196" rx="10" fill="#F8FAFC"/>
+  <rect x="268" y="172" width="104" height="152" rx="6" fill="#E2E8F0"/>
+  <rect x="292" y="198" width="18" height="36" rx="3" fill="#334155"/>
+  <rect x="330" y="198" width="18" height="36" rx="3" fill="#334155"/>
+  <circle cx="320" cy="268" r="8" fill="#334155"/>
+  <path d="M368 188c18-22 48-18 58 8" fill="none" stroke="#FBBF24" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="430" cy="176" r="7" fill="#F59E0B"/>
+</svg>

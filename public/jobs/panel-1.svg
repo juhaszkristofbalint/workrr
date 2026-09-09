@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" role="img" aria-label="Electrical panel">
+  <rect width="640" height="480" fill="#334155"/>
+  <rect x="150" y="40" width="340" height="400" rx="12" fill="#1E293B"/>
+  <rect x="180" y="70" width="280" height="340" rx="6" fill="#0F172A"/>
+  <g fill="#64748B">
+    <rect x="210" y="100" width="90" height="28" rx="4"/>
+    <rect x="340" y="100" width="90" height="28" rx="4"/>
+    <rect x="210" y="150" width="90" height="28" rx="4"/>
+    <rect x="340" y="150" width="90" height="28" rx="4"/>
+    <rect x="210" y="200" width="90" height="28" rx="4"/>
+    <rect x="340" y="200" width="90" height="28" rx="4"/>
+    <rect x="210" y="250" width="90" height="28" rx="4"/>
+    <rect x="340" y="250" width="90" height="28" rx="4"/>
+    <rect x="210" y="300" width="90" height="28" rx="4"/>
+    <rect x="340" y="300" width="90" height="28" rx="4"/>
+  </g>
+  <rect x="340" y="200" width="90" height="28" rx="4" fill="#F59E0B"/>
+</svg>

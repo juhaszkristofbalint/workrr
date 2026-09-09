@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" role="img" aria-label="Dripping shutoff valve">
+  <rect width="640" height="480" fill="#0F172A"/>
+  <rect x="250" y="40" width="36" height="220" rx="8" fill="#94A3B8"/>
+  <rect x="354" y="40" width="36" height="220" rx="8" fill="#94A3B8"/>
+  <rect x="220" y="240" width="200" height="56" rx="12" fill="#64748B"/>
+  <circle cx="270" cy="268" r="18" fill="#334155"/>
+  <circle cx="370" cy="268" r="18" fill="#334155"/>
+  <path d="M370 300c0 24 18 36 18 60" fill="none" stroke="#38BDF8" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="388" cy="372" r="8" fill="#7DD3FC"/>
+  <circle cx="388" cy="402" r="5" fill="#BAE6FD"/>
+</svg>

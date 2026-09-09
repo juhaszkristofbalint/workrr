@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" role="img" aria-label="Water stain on cabinet floor">
+  <rect width="640" height="480" fill="#78716C"/>
+  <rect x="40" y="40" width="560" height="400" fill="#A8A29E"/>
+  <ellipse cx="330" cy="280" rx="160" ry="90" fill="#57534E" opacity="0.55"/>
+  <ellipse cx="310" cy="270" rx="90" ry="50" fill="#0EA5E9" opacity="0.35"/>
+  <ellipse cx="300" cy="262" rx="40" ry="22" fill="#38BDF8" opacity="0.5"/>
+</svg>

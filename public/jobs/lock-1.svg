@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" role="img" aria-label="Locked front door">
+  <rect width="640" height="480" fill="#1E3A5F"/>
+  <rect x="170" y="40" width="300" height="420" rx="8" fill="#92400E"/>
+  <rect x="200" y="70" width="240" height="280" rx="4" fill="#78350F"/>
+  <circle cx="420" cy="250" r="22" fill="#FBBF24"/>
+  <rect x="412" y="250" width="16" height="48" rx="4" fill="#F59E0B"/>
+</svg>
