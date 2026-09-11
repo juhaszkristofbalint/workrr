@@ -121,9 +121,16 @@ export function CreateJobForm({
       return;
     }
 
+    const trimmedAddress = address.trim();
+    if (!trimmedAddress) {
+      setFormError("missing");
+      setSuccess("");
+      return;
+    }
+
     const formData = new FormData(event.currentTarget);
     formData.set("category", selectedCategory);
-    formData.set("address", address);
+    formData.set("address", trimmedAddress);
     formData.set("emergency", emergency ? "true" : "false");
     if (gps) {
       formData.set("lat", String(gps.lat));
@@ -134,17 +141,21 @@ export function CreateJobForm({
     setFormError("");
     setSuccess("");
 
-    const result = await createJobAction(formData);
-    setPending(false);
+    try {
+      const result = await createJobAction(formData);
+      if (!result.ok) {
+        setFormError(result.error);
+        return;
+      }
 
-    if (!result.ok) {
-      setFormError(result.error);
-      return;
+      setSuccess(t("createJob.success"));
+      router.push("/customer/jobs?created=1");
+      router.refresh();
+    } catch {
+      setFormError("save");
+    } finally {
+      setPending(false);
     }
-
-    setSuccess(t("createJob.success"));
-    router.push("/customer/jobs?created=1");
-    router.refresh();
   }
 
   return (
@@ -304,6 +315,8 @@ export function CreateJobForm({
         <div className="flex flex-col gap-2">
           <p className="text-footnote font-medium text-muted">{t("createJob.address")}</p>
           <Input
+            name="address"
+            required
             value={address}
             onChange={(event) => setAddress(event.target.value)}
             placeholder={t("createJob.addressPlaceholder")}
@@ -348,21 +361,23 @@ export function CreateJobForm({
           />
         </div>
 
-        <Button
-          type="submit"
-          size="lg"
-          disabled={pending}
-          className={cn(
-            "w-full",
-            emergency && "bg-danger active:bg-danger/90",
-          )}
-        >
-          {pending
-            ? t("createJob.sending")
-            : emergency
-              ? t("createJob.submitEmergency")
-              : t("createJob.submit")}
-        </Button>
+        <div className="sticky bottom-[calc(var(--nav-height)+var(--nav-inset)+var(--safe-bottom)+0.35rem)] z-40 -mx-1 bg-gradient-to-t from-background via-background to-transparent pt-3">
+          <Button
+            type="submit"
+            size="lg"
+            disabled={pending}
+            className={cn(
+              "w-full",
+              emergency && "bg-danger active:bg-danger/90",
+            )}
+          >
+            {pending
+              ? t("createJob.sending")
+              : emergency
+                ? t("createJob.submitEmergency")
+                : t("createJob.submit")}
+          </Button>
+        </div>
       </div>
     </form>
   );

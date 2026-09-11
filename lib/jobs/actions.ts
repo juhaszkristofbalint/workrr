@@ -97,10 +97,17 @@ export async function createJobAction(formData: FormData): Promise<CreateJobResu
     return { ok: false, error: "save" };
   }
 
-  await supabase.from("customer_profiles").upsert(
-    { profile_id: user.id },
-    { onConflict: "profile_id" },
-  );
+  const { error: profileError } = await supabase.rpc("ensure_customer_profile");
+  if (profileError) {
+    const { error: upsertError } = await supabase.from("customer_profiles").upsert(
+      { profile_id: user.id },
+      { onConflict: "profile_id" },
+    );
+    if (upsertError) {
+      console.error("createJob customer profile", profileError, upsertError);
+      return { ok: false, error: "save" };
+    }
+  }
 
   const jobId = crypto.randomUUID();
   const createdAt = new Date().toISOString();
@@ -131,10 +138,15 @@ export async function createJobAction(formData: FormData): Promise<CreateJobResu
   const { error } = await supabase.from("jobs").insert({
     id: jobId,
     customer_id: user.id,
+    created_by: user.id,
     category_id: categoryId,
+    category,
     title,
     description,
+    address,
     address_text: address,
+    latitude: Number.isFinite(latitude) ? latitude : null,
+    longitude: Number.isFinite(longitude) ? longitude : null,
     lat: Number.isFinite(latitude) ? latitude : null,
     lng: Number.isFinite(longitude) ? longitude : null,
     status: "open",
@@ -145,6 +157,7 @@ export async function createJobAction(formData: FormData): Promise<CreateJobResu
   });
 
   if (error) {
+    console.error("createJob insert", error);
     return { ok: false, error: "save" };
   }
 

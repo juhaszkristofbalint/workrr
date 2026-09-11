@@ -308,12 +308,22 @@ export type Database = {
           photo_urls: string[];
           removed_at: string | null;
           removed_by: string | null;
+          created_by?: string | null;
+          category?: string | null;
+          address?: string | null;
+          latitude?: number | null;
+          longitude?: number | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           customer_id: string;
+          created_by?: string | null;
+          category?: string | null;
+          address?: string | null;
+          latitude?: number | null;
+          longitude?: number | null;
           category_id: string;
           assigned_professional_id?: string | null;
           address_id?: string | null;
@@ -655,6 +665,10 @@ export type Database = {
         Returns: number;
       };
       current_role_slug: {
+        Args: Record<string, never>;
+        Returns: string;
+      };
+      ensure_customer_profile: {
         Args: Record<string, never>;
         Returns: string;
       };
