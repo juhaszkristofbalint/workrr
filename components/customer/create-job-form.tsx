@@ -8,7 +8,7 @@ import { createJobAction } from "@/lib/jobs/actions";
 import { categoryLabel } from "@/lib/i18n/translate";
 import { cn } from "@/lib/cn";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
 type Photo = { id: string; url: string; file: File };
 
@@ -34,6 +34,7 @@ export function CreateJobForm({
   const [pending, setPending] = useState(false);
   const [formError, setFormError] = useState("");
   const [success, setSuccess] = useState("");
+  const categoryRef = useRef("");
 
   useEffect(() => {
     if (openCamera) {
@@ -101,24 +102,29 @@ export function CreateJobForm({
   }
 
   function selectCategory(item: (typeof JOB_CATEGORIES)[number]) {
+    categoryRef.current = item;
     setCategory(item);
-    setFormError((current) =>
-      current === "category" || current === t("createJob.errorCategory")
-        ? ""
-        : current,
-    );
+    setFormError((current) => (current === "category" ? "" : current));
   }
 
-  async function submit(formData: FormData) {
-    if (!category) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const selectedCategory = categoryRef.current || category;
+
+    if (!selectedCategory) {
       setFormError("category");
       setSuccess("");
       return;
     }
 
-    formData.set("category", category);
+    const formData = new FormData(event.currentTarget);
+    formData.set("category", selectedCategory);
     formData.set("address", address);
     formData.set("emergency", emergency ? "true" : "false");
+    if (gps) {
+      formData.set("lat", String(gps.lat));
+      formData.set("lng", String(gps.lng));
+    }
     photos.forEach((photo) => formData.append("photos", photo.file));
     setPending(true);
     setFormError("");
@@ -138,7 +144,8 @@ export function CreateJobForm({
   }
 
   return (
-    <form action={submit} className="flex flex-col gap-6 pb-8">
+    <form onSubmit={onSubmit} className="flex flex-col gap-6 pb-8">
+      <input type="hidden" name="category" value={category} />
       <input type="hidden" name="address" value={address} />
       <input type="hidden" name="emergency" value={emergency ? "true" : "false"} />
       {gps ? (
@@ -249,25 +256,20 @@ export function CreateJobForm({
             {JOB_CATEGORIES.map((item) => {
               const selected = category === item;
               return (
-                <label
+                <button
                   key={item}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => selectCategory(item)}
                   className={cn(
-                    "inline-flex min-h-10 cursor-pointer items-center rounded-full px-3 text-footnote font-semibold",
+                    "inline-flex min-h-10 items-center rounded-full px-3 text-footnote font-semibold",
                     selected
                       ? "bg-primary text-primary-foreground"
                       : "bg-fill text-label",
                   )}
                 >
-                  <input
-                    type="radio"
-                    name="category"
-                    value={item}
-                    checked={selected}
-                    onChange={() => selectCategory(item)}
-                    className="sr-only"
-                  />
                   {categoryLabel(locale, item)}
-                </label>
+                </button>
               );
             })}
           </div>

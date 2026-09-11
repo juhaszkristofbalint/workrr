@@ -18,26 +18,51 @@ function slugFromCategory(category: string) {
   return category.trim().toLowerCase().replace(/\s+/g, "-");
 }
 
+function readCategory(formData: FormData) {
+  const values = formData
+    .getAll("category")
+    .map((value) => String(value).trim())
+    .filter(Boolean);
+  return values.at(-1) ?? "";
+}
+
+function categoryMatches(
+  row: Record<string, unknown>,
+  slug: string,
+  needle: string,
+) {
+  const fields = ["slug", "name_en", "name_hu", "name", "title", "label"];
+  return fields.some((field) => {
+    const value = row[field];
+    if (typeof value !== "string") return false;
+    const normalized = value.trim().toLowerCase();
+    return normalized === needle || normalized === slug;
+  });
+}
+
 async function resolveCategoryId(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   category: string,
 ) {
   const slug = slugFromCategory(category);
   const needle = category.trim().toLowerCase();
-  const { data } = await supabase
+
+  const bySlug = await supabase
     .from("categories")
-    .select("id, slug, name_en, name_hu");
+    .select("id")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (bySlug.data?.id) return bySlug.data.id;
 
-  const match = (data ?? []).find((row) => {
-    return (
-      row.slug === slug ||
-      row.slug === needle ||
-      row.name_en.toLowerCase() === needle ||
-      row.name_hu.toLowerCase() === needle
-    );
-  });
+  const full = await supabase.from("categories").select("*");
+  const match = (full.data ?? []).find((row) =>
+    categoryMatches(row as Record<string, unknown>, slug, needle),
+  );
+  if (match && "id" in match && typeof match.id === "string") {
+    return match.id;
+  }
 
-  return match?.id ?? null;
+  return null;
 }
 
 async function revalidateJobSurfaces() {
@@ -72,7 +97,7 @@ export async function createJobAction(formData: FormData): Promise<CreateJobResu
   const user = await requireRole("customer");
 
   const title = String(formData.get("title") ?? "").trim();
-  const category = String(formData.get("category") ?? "").trim();
+  const category = readCategory(formData);
   const description = String(formData.get("description") ?? "").trim();
   const address = String(formData.get("address") ?? "").trim();
   const preferredDate = String(formData.get("preferredDate") ?? "").trim();
