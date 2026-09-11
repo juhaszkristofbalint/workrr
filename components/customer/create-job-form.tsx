@@ -3,7 +3,11 @@
 import { CameraIcon } from "@/components/icons";
 import { useLocale, useT } from "@/components/i18n/locale-provider";
 import { Button, Field, Input, Switch, Textarea } from "@/components/ui";
-import { JOB_CATEGORIES } from "@/lib/jobs/categories";
+import {
+  JOB_CATEGORIES,
+  isJobCategorySlug,
+  type JobCategorySlug,
+} from "@/lib/jobs/categories";
 import { createJobAction } from "@/lib/jobs/actions";
 import { categoryLabel } from "@/lib/i18n/translate";
 import { cn } from "@/lib/cn";
@@ -101,9 +105,9 @@ export function CreateJobForm({
     return t("createJob.error");
   }
 
-  function selectCategory(item: (typeof JOB_CATEGORIES)[number]) {
-    categoryRef.current = item;
-    setCategory(item);
+  function selectCategory(slug: JobCategorySlug) {
+    categoryRef.current = slug;
+    setCategory(slug);
     setFormError((current) => (current === "category" ? "" : current));
   }
 
@@ -111,7 +115,7 @@ export function CreateJobForm({
     event.preventDefault();
     const selectedCategory = categoryRef.current || category;
 
-    if (!selectedCategory) {
+    if (!isJobCategorySlug(selectedCategory)) {
       setFormError("category");
       setSuccess("");
       return;
@@ -253,14 +257,14 @@ export function CreateJobForm({
         <div className="flex flex-col gap-2">
           <p className="text-footnote font-medium text-muted">{t("createJob.category")}</p>
           <div className="flex flex-wrap gap-2" role="group" aria-label={t("createJob.category")}>
-            {JOB_CATEGORIES.map((item) => {
-              const selected = category === item;
+            {JOB_CATEGORIES.map((slug) => {
+              const selected = category === slug;
               return (
                 <button
-                  key={item}
+                  key={slug}
                   type="button"
                   aria-pressed={selected}
-                  onClick={() => selectCategory(item)}
+                  onClick={() => selectCategory(slug)}
                   className={cn(
                     "inline-flex min-h-10 items-center rounded-full px-3 text-footnote font-semibold",
                     selected
@@ -268,7 +272,7 @@ export function CreateJobForm({
                       : "bg-fill text-label",
                   )}
                 >
-                  {categoryLabel(locale, item)}
+                  {categoryLabel(locale, slug)}
                 </button>
               );
             })}

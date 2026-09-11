@@ -2,47 +2,62 @@
 -- Run in the Supabase SQL editor or via the Supabase CLI.
 
 -- ---------------------------------------------------------------------------
--- Types
+-- Types (safe to re-run)
 -- ---------------------------------------------------------------------------
 
-create type public.account_type as enum ('individual', 'company');
+do $$ begin
+  create type public.account_type as enum ('individual', 'company');
+exception when duplicate_object then null;
+end $$;
 
-create type public.job_status as enum (
-  'open',
-  'matched',
-  'en_route',
-  'in_progress',
-  'completed',
-  'cancelled',
-  'removed'
-);
+do $$ begin
+  create type public.job_status as enum (
+    'open',
+    'matched',
+    'en_route',
+    'in_progress',
+    'completed',
+    'cancelled',
+    'removed'
+  );
+exception when duplicate_object then null;
+end $$;
 
-create type public.offer_status as enum (
-  'pending',
-  'accepted',
-  'declined',
-  'withdrawn'
-);
+do $$ begin
+  create type public.offer_status as enum (
+    'pending',
+    'accepted',
+    'declined',
+    'withdrawn'
+  );
+exception when duplicate_object then null;
+end $$;
 
-create type public.credit_transaction_type as enum (
-  'registration',
-  'offer',
-  'featured',
-  'purchase',
-  'admin'
-);
+do $$ begin
+  create type public.credit_transaction_type as enum (
+    'registration',
+    'offer',
+    'featured',
+    'purchase',
+    'admin'
+  );
+exception when duplicate_object then null;
+end $$;
 
-create type public.notification_type as enum (
-  'job_nearby',
-  'offer_received',
-  'offer_accepted',
-  'offer_viewed',
-  'message',
-  'review',
-  'credits',
-  'moderation',
-  'system'
-);
+do $$ begin
+  create type public.notification_type as enum (
+    'job_nearby',
+    'offer_received',
+    'offer_accepted',
+    'offer_viewed',
+    'message',
+    'review',
+    'credits',
+    'moderation',
+    'system'
+  );
+exception when duplicate_object then null;
+end $$;
 
 -- ---------------------------------------------------------------------------
 -- Updated-at helper
@@ -62,14 +77,14 @@ $$;
 -- Lookup: roles & categories
 -- ---------------------------------------------------------------------------
 
-create table public.roles (
+create table if not exists public.roles (
   id uuid primary key default gen_random_uuid(),
   slug text not null unique check (slug in ('customer', 'professional', 'admin')),
   name text not null,
   created_at timestamptz not null default now()
 );
 
-create table public.categories (
+create table if not exists public.categories (
   id uuid primary key default gen_random_uuid(),
   slug text not null unique,
   name_en text not null,
@@ -78,13 +93,13 @@ create table public.categories (
   created_at timestamptz not null default now()
 );
 
-create index categories_sort_order_idx on public.categories (sort_order);
+create index if not exists categories_sort_order_idx on public.categories (sort_order);
 
 -- ---------------------------------------------------------------------------
 -- Profiles (1:1 with auth.users)
 -- ---------------------------------------------------------------------------
 
-create table public.profiles (
+create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   role_id uuid not null references public.roles (id),
   display_name text not null,
@@ -98,25 +113,27 @@ create table public.profiles (
   updated_at timestamptz not null default now()
 );
 
-create index profiles_role_id_idx on public.profiles (role_id);
-create index profiles_is_banned_idx on public.profiles (is_banned) where is_banned;
-create index profiles_created_at_idx on public.profiles (created_at desc);
+create index if not exists profiles_role_id_idx on public.profiles (role_id);
+create index if not exists profiles_is_banned_idx on public.profiles (is_banned) where is_banned;
+create index if not exists profiles_created_at_idx on public.profiles (created_at desc);
 
+drop trigger if exists profiles_set_updated_at on public.profiles;
 create trigger profiles_set_updated_at
 before update on public.profiles
 for each row execute function public.set_updated_at();
 
-create table public.customer_profiles (
+create table if not exists public.customer_profiles (
   profile_id uuid primary key references public.profiles (id) on delete cascade,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
+drop trigger if exists customer_profiles_set_updated_at on public.customer_profiles;
 create trigger customer_profiles_set_updated_at
 before update on public.customer_profiles
 for each row execute function public.set_updated_at();
 
-create table public.professional_profiles (
+create table if not exists public.professional_profiles (
   profile_id uuid primary key references public.profiles (id) on delete cascade,
   account_type public.account_type not null default 'individual',
   business_name text,
@@ -143,19 +160,20 @@ create table public.professional_profiles (
   )
 );
 
-create index professional_profiles_city_idx on public.professional_profiles (city);
-create index professional_profiles_verified_idx
+create index if not exists professional_profiles_city_idx on public.professional_profiles (city);
+create index if not exists professional_profiles_verified_idx
   on public.professional_profiles (is_verified)
   where is_verified;
-create index professional_profiles_available_idx
+create index if not exists professional_profiles_available_idx
   on public.professional_profiles (is_available)
   where is_available;
 
+drop trigger if exists professional_profiles_set_updated_at on public.professional_profiles;
 create trigger professional_profiles_set_updated_at
 before update on public.professional_profiles
 for each row execute function public.set_updated_at();
 
-create table public.professional_categories (
+create table if not exists public.professional_categories (
   id uuid primary key default gen_random_uuid(),
   professional_id uuid not null references public.professional_profiles (profile_id)
     on delete cascade,
@@ -164,14 +182,14 @@ create table public.professional_categories (
   unique (professional_id, category_id)
 );
 
-create index professional_categories_category_id_idx
+create index if not exists professional_categories_category_id_idx
   on public.professional_categories (category_id);
 
 -- ---------------------------------------------------------------------------
 -- Addresses
 -- ---------------------------------------------------------------------------
 
-create table public.addresses (
+create table if not exists public.addresses (
   id uuid primary key default gen_random_uuid(),
   profile_id uuid not null references public.profiles (id) on delete cascade,
   label text,
@@ -185,11 +203,12 @@ create table public.addresses (
   updated_at timestamptz not null default now()
 );
 
-create index addresses_profile_id_idx on public.addresses (profile_id);
-create unique index addresses_one_default_idx
+create index if not exists addresses_profile_id_idx on public.addresses (profile_id);
+create unique index if not exists addresses_one_default_idx
   on public.addresses (profile_id)
   where is_default;
 
+drop trigger if exists addresses_set_updated_at on public.addresses;
 create trigger addresses_set_updated_at
 before update on public.addresses
 for each row execute function public.set_updated_at();
@@ -198,7 +217,7 @@ for each row execute function public.set_updated_at();
 -- Jobs & images
 -- ---------------------------------------------------------------------------
 
-create table public.jobs (
+create table if not exists public.jobs (
   id uuid primary key default gen_random_uuid(),
   customer_id uuid not null references public.customer_profiles (profile_id)
     on delete restrict,
@@ -226,14 +245,87 @@ create table public.jobs (
   )
 );
 
-create index jobs_customer_id_idx on public.jobs (customer_id);
-create index jobs_category_id_idx on public.jobs (category_id);
-create index jobs_assigned_professional_id_idx on public.jobs (assigned_professional_id);
-create index jobs_status_created_idx on public.jobs (status, created_at desc);
-create index jobs_emergency_idx on public.jobs (emergency) where emergency;
-create index jobs_open_geo_idx on public.jobs (status, lat, lng)
+-- If `jobs` already existed (e.g. with `created_by`), add missing columns.
+alter table public.jobs add column if not exists customer_id uuid;
+alter table public.jobs add column if not exists category_id uuid;
+alter table public.jobs add column if not exists assigned_professional_id uuid;
+alter table public.jobs add column if not exists address_id uuid;
+alter table public.jobs add column if not exists title text;
+alter table public.jobs add column if not exists description text;
+alter table public.jobs add column if not exists address_text text;
+alter table public.jobs add column if not exists lat double precision;
+alter table public.jobs add column if not exists lng double precision;
+alter table public.jobs add column if not exists status public.job_status not null default 'open';
+alter table public.jobs add column if not exists emergency boolean not null default false;
+alter table public.jobs add column if not exists preferred_date date;
+alter table public.jobs add column if not exists budget_min numeric(10, 2);
+alter table public.jobs add column if not exists budget_max numeric(10, 2);
+alter table public.jobs add column if not exists flagged boolean not null default false;
+alter table public.jobs add column if not exists photo_urls text[] not null default '{}';
+alter table public.jobs add column if not exists removed_at timestamptz;
+alter table public.jobs add column if not exists removed_by uuid;
+alter table public.jobs add column if not exists created_at timestamptz not null default now();
+alter table public.jobs add column if not exists updated_at timestamptz not null default now();
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'jobs' and column_name = 'created_by'
+  ) then
+    update public.jobs
+    set customer_id = created_by
+    where customer_id is null and created_by is not null;
+  end if;
+
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'jobs' and column_name = 'address'
+  ) then
+    update public.jobs
+    set address_text = address
+    where address_text is null and address is not null;
+  end if;
+
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'jobs' and column_name = 'latitude'
+  ) then
+    update public.jobs
+    set lat = latitude
+    where lat is null and latitude is not null;
+  end if;
+
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'jobs' and column_name = 'longitude'
+  ) then
+    update public.jobs
+    set lng = longitude
+    where lng is null and longitude is not null;
+  end if;
+end $$;
+
+do $$
+begin
+  insert into public.customer_profiles (profile_id)
+  select distinct customer_id
+  from public.jobs
+  where customer_id is not null
+  on conflict (profile_id) do nothing;
+exception
+  when undefined_table then null;
+end $$;
+
+create index if not exists jobs_customer_id_idx on public.jobs (customer_id);
+create index if not exists jobs_category_id_idx on public.jobs (category_id);
+create index if not exists jobs_assigned_professional_id_idx on public.jobs (assigned_professional_id);
+create index if not exists jobs_status_created_idx on public.jobs (status, created_at desc);
+create index if not exists jobs_emergency_idx on public.jobs (emergency) where emergency;
+create index if not exists jobs_open_geo_idx on public.jobs (status, lat, lng)
   where status = 'open' and removed_at is null;
 
+drop trigger if exists jobs_set_updated_at on public.jobs;
 create trigger jobs_set_updated_at
 before update on public.jobs
 for each row execute function public.set_updated_at();
@@ -259,11 +351,12 @@ begin
 end;
 $$;
 
+drop trigger if exists jobs_guard_assignment on public.jobs;
 create trigger jobs_guard_assignment
 before update on public.jobs
 for each row execute function public.guard_job_assignment();
 
-create table public.job_images (
+create table if not exists public.job_images (
   id uuid primary key default gen_random_uuid(),
   job_id uuid not null references public.jobs (id) on delete cascade,
   storage_path text not null,
@@ -272,13 +365,13 @@ create table public.job_images (
   created_at timestamptz not null default now()
 );
 
-create index job_images_job_id_idx on public.job_images (job_id, sort_order);
+create index if not exists job_images_job_id_idx on public.job_images (job_id, sort_order);
 
 -- ---------------------------------------------------------------------------
 -- Offers
 -- ---------------------------------------------------------------------------
 
-create table public.offers (
+create table if not exists public.offers (
   id uuid primary key default gen_random_uuid(),
   job_id uuid not null references public.jobs (id) on delete cascade,
   professional_id uuid not null references public.professional_profiles (profile_id)
@@ -295,10 +388,11 @@ create table public.offers (
   unique (job_id, professional_id)
 );
 
-create index offers_job_id_idx on public.offers (job_id);
-create index offers_professional_id_idx on public.offers (professional_id);
-create index offers_status_idx on public.offers (status);
+create index if not exists offers_job_id_idx on public.offers (job_id);
+create index if not exists offers_professional_id_idx on public.offers (professional_id);
+create index if not exists offers_status_idx on public.offers (status);
 
+drop trigger if exists offers_set_updated_at on public.offers;
 create trigger offers_set_updated_at
 before update on public.offers
 for each row execute function public.set_updated_at();
@@ -307,7 +401,7 @@ for each row execute function public.set_updated_at();
 -- Chat
 -- ---------------------------------------------------------------------------
 
-create table public.conversations (
+create table if not exists public.conversations (
   id uuid primary key default gen_random_uuid(),
   job_id uuid not null references public.jobs (id) on delete cascade,
   customer_id uuid not null references public.customer_profiles (profile_id)
@@ -319,12 +413,12 @@ create table public.conversations (
   unique (job_id, professional_id)
 );
 
-create index conversations_customer_id_idx on public.conversations (customer_id);
-create index conversations_professional_id_idx on public.conversations (professional_id);
-create index conversations_last_message_at_idx
+create index if not exists conversations_customer_id_idx on public.conversations (customer_id);
+create index if not exists conversations_professional_id_idx on public.conversations (professional_id);
+create index if not exists conversations_last_message_at_idx
   on public.conversations (last_message_at desc nulls last);
 
-create table public.messages (
+create table if not exists public.messages (
   id uuid primary key default gen_random_uuid(),
   conversation_id uuid not null references public.conversations (id) on delete cascade,
   sender_id uuid not null references public.profiles (id) on delete restrict,
@@ -333,9 +427,9 @@ create table public.messages (
   created_at timestamptz not null default now()
 );
 
-create index messages_conversation_created_idx
+create index if not exists messages_conversation_created_idx
   on public.messages (conversation_id, created_at);
-create index messages_unread_idx
+create index if not exists messages_unread_idx
   on public.messages (conversation_id)
   where read_at is null;
 
@@ -343,18 +437,19 @@ create index messages_unread_idx
 -- Credits
 -- ---------------------------------------------------------------------------
 
-create table public.credits_wallet (
+create table if not exists public.credits_wallet (
   profile_id uuid primary key references public.professional_profiles (profile_id)
     on delete cascade,
   balance integer not null default 0 check (balance >= 0),
   updated_at timestamptz not null default now()
 );
 
+drop trigger if exists credits_wallet_set_updated_at on public.credits_wallet;
 create trigger credits_wallet_set_updated_at
 before update on public.credits_wallet
 for each row execute function public.set_updated_at();
 
-create table public.credits_transactions (
+create table if not exists public.credits_transactions (
   id uuid primary key default gen_random_uuid(),
   wallet_id uuid not null references public.credits_wallet (profile_id) on delete cascade,
   type public.credit_transaction_type not null,
@@ -367,16 +462,16 @@ create table public.credits_transactions (
   created_at timestamptz not null default now()
 );
 
-create index credits_transactions_wallet_created_idx
+create index if not exists credits_transactions_wallet_created_idx
   on public.credits_transactions (wallet_id, created_at desc);
-create index credits_transactions_type_idx on public.credits_transactions (type);
-create index credits_transactions_offer_id_idx on public.credits_transactions (offer_id);
+create index if not exists credits_transactions_type_idx on public.credits_transactions (type);
+create index if not exists credits_transactions_offer_id_idx on public.credits_transactions (offer_id);
 
 -- ---------------------------------------------------------------------------
 -- Reviews, favorites, notifications
 -- ---------------------------------------------------------------------------
 
-create table public.reviews (
+create table if not exists public.reviews (
   id uuid primary key default gen_random_uuid(),
   job_id uuid not null unique references public.jobs (id) on delete cascade,
   customer_id uuid not null references public.customer_profiles (profile_id)
@@ -389,10 +484,10 @@ create table public.reviews (
   created_at timestamptz not null default now()
 );
 
-create index reviews_professional_id_idx on public.reviews (professional_id);
-create index reviews_customer_id_idx on public.reviews (customer_id);
+create index if not exists reviews_professional_id_idx on public.reviews (professional_id);
+create index if not exists reviews_customer_id_idx on public.reviews (customer_id);
 
-create table public.favorites (
+create table if not exists public.favorites (
   id uuid primary key default gen_random_uuid(),
   customer_id uuid not null references public.customer_profiles (profile_id)
     on delete cascade,
@@ -402,9 +497,9 @@ create table public.favorites (
   unique (customer_id, professional_id)
 );
 
-create index favorites_professional_id_idx on public.favorites (professional_id);
+create index if not exists favorites_professional_id_idx on public.favorites (professional_id);
 
-create table public.notifications (
+create table if not exists public.notifications (
   id uuid primary key default gen_random_uuid(),
   profile_id uuid not null references public.profiles (id) on delete cascade,
   type public.notification_type not null,
@@ -417,9 +512,9 @@ create table public.notifications (
   created_at timestamptz not null default now()
 );
 
-create index notifications_profile_created_idx
+create index if not exists notifications_profile_created_idx
   on public.notifications (profile_id, created_at desc);
-create index notifications_unread_idx
+create index if not exists notifications_unread_idx
   on public.notifications (profile_id)
   where read_at is null;
 
@@ -623,6 +718,7 @@ begin
 end;
 $$;
 
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
 after insert on auth.users
 for each row execute function public.handle_new_user();
@@ -739,6 +835,7 @@ begin
 end;
 $$;
 
+drop trigger if exists offers_charge_credits on public.offers;
 create trigger offers_charge_credits
 after insert on public.offers
 for each row execute function public.charge_offer_credits_after();
@@ -816,6 +913,7 @@ begin
 end;
 $$;
 
+drop trigger if exists messages_touch_conversation on public.messages;
 create trigger messages_touch_conversation
 after insert on public.messages
 for each row execute function public.touch_conversation_on_message();
@@ -881,13 +979,16 @@ alter table public.favorites enable row level security;
 alter table public.notifications enable row level security;
 
 -- roles / categories: readable by everyone (signup + filters)
+drop policy if exists roles_select on public.roles;
 create policy roles_select on public.roles
   for select using (true);
 
+drop policy if exists categories_select on public.categories;
 create policy categories_select on public.categories
   for select using (true);
 
 -- profiles
+drop policy if exists profiles_select_own_or_admin on public.profiles;
 create policy profiles_select_own_or_admin on public.profiles
   for select using (
     id = auth.uid()
@@ -901,15 +1002,18 @@ create policy profiles_select_own_or_admin on public.profiles
     )
   );
 
+drop policy if exists profiles_update_own on public.profiles;
 create policy profiles_update_own on public.profiles
   for update using (id = auth.uid() and not is_banned)
   with check (id = auth.uid());
 
+drop policy if exists profiles_update_admin on public.profiles;
 create policy profiles_update_admin on public.profiles
   for update using (public.is_admin())
   with check (public.is_admin());
 
 -- customer_profiles
+drop policy if exists customer_profiles_select on public.customer_profiles;
 create policy customer_profiles_select on public.customer_profiles
   for select using (
     profile_id = auth.uid()
@@ -926,15 +1030,18 @@ create policy customer_profiles_select on public.customer_profiles
     )
   );
 
+drop policy if exists customer_profiles_mutate_own on public.customer_profiles;
 create policy customer_profiles_mutate_own on public.customer_profiles
   for all using (profile_id = auth.uid())
   with check (profile_id = auth.uid());
 
+drop policy if exists customer_profiles_admin on public.customer_profiles;
 create policy customer_profiles_admin on public.customer_profiles
   for all using (public.is_admin())
   with check (public.is_admin());
 
 -- professional_profiles: marketplace listing
+drop policy if exists professional_profiles_select on public.professional_profiles;
 create policy professional_profiles_select on public.professional_profiles
   for select using (
     profile_id = auth.uid()
@@ -946,35 +1053,43 @@ create policy professional_profiles_select on public.professional_profiles
     )
   );
 
+drop policy if exists professional_profiles_update_own on public.professional_profiles;
 create policy professional_profiles_update_own on public.professional_profiles
   for update using (profile_id = auth.uid())
   with check (profile_id = auth.uid());
 
+drop policy if exists professional_profiles_admin on public.professional_profiles;
 create policy professional_profiles_admin on public.professional_profiles
   for all using (public.is_admin())
   with check (public.is_admin());
 
 -- professional_categories
+drop policy if exists professional_categories_select on public.professional_categories;
 create policy professional_categories_select on public.professional_categories
   for select using (true);
 
+drop policy if exists professional_categories_own on public.professional_categories;
 create policy professional_categories_own on public.professional_categories
   for all using (professional_id = auth.uid())
   with check (professional_id = auth.uid());
 
+drop policy if exists professional_categories_admin on public.professional_categories;
 create policy professional_categories_admin on public.professional_categories
   for all using (public.is_admin())
   with check (public.is_admin());
 
 -- addresses
+drop policy if exists addresses_own on public.addresses;
 create policy addresses_own on public.addresses
   for all using (profile_id = auth.uid())
   with check (profile_id = auth.uid());
 
+drop policy if exists addresses_admin on public.addresses;
 create policy addresses_admin on public.addresses
   for all using (public.is_admin())
   with check (public.is_admin());
 
+drop policy if exists addresses_assigned_pro_select on public.addresses;
 create policy addresses_assigned_pro_select on public.addresses
   for select using (
     exists (
@@ -985,6 +1100,7 @@ create policy addresses_assigned_pro_select on public.addresses
   );
 
 -- jobs
+drop policy if exists jobs_select on public.jobs;
 create policy jobs_select on public.jobs
   for select using (
     public.is_admin()
@@ -997,25 +1113,30 @@ create policy jobs_select on public.jobs
     )
   );
 
+drop policy if exists jobs_insert_customer on public.jobs;
 create policy jobs_insert_customer on public.jobs
   for insert with check (
     customer_id = auth.uid()
     and public.is_customer()
   );
 
+drop policy if exists jobs_update_customer on public.jobs;
 create policy jobs_update_customer on public.jobs
   for update using (customer_id = auth.uid())
   with check (customer_id = auth.uid());
 
+drop policy if exists jobs_update_assigned_pro on public.jobs;
 create policy jobs_update_assigned_pro on public.jobs
   for update using (assigned_professional_id = auth.uid())
   with check (assigned_professional_id = auth.uid());
 
+drop policy if exists jobs_admin on public.jobs;
 create policy jobs_admin on public.jobs
   for all using (public.is_admin())
   with check (public.is_admin());
 
 -- job_images
+drop policy if exists job_images_select on public.job_images;
 create policy job_images_select on public.job_images
   for select using (
     exists (
@@ -1033,6 +1154,7 @@ create policy job_images_select on public.job_images
     )
   );
 
+drop policy if exists job_images_customer on public.job_images;
 create policy job_images_customer on public.job_images
   for all using (
     exists (
@@ -1047,11 +1169,13 @@ create policy job_images_customer on public.job_images
     )
   );
 
+drop policy if exists job_images_admin on public.job_images;
 create policy job_images_admin on public.job_images
   for all using (public.is_admin())
   with check (public.is_admin());
 
 -- offers
+drop policy if exists offers_select on public.offers;
 create policy offers_select on public.offers
   for select using (
     public.is_admin()
@@ -1062,6 +1186,7 @@ create policy offers_select on public.offers
     )
   );
 
+drop policy if exists offers_insert_pro on public.offers;
 create policy offers_insert_pro on public.offers
   for insert with check (
     professional_id = auth.uid()
@@ -1078,17 +1203,20 @@ create policy offers_insert_pro on public.offers
     )
   );
 
+drop policy if exists offers_update_own_pending on public.offers;
 create policy offers_update_own_pending on public.offers
   for update using (
     professional_id = auth.uid() and status = 'pending'
   )
   with check (professional_id = auth.uid());
 
+drop policy if exists offers_admin on public.offers;
 create policy offers_admin on public.offers
   for all using (public.is_admin())
   with check (public.is_admin());
 
 -- conversations
+drop policy if exists conversations_select on public.conversations;
 create policy conversations_select on public.conversations
   for select using (
     public.is_admin()
@@ -1096,39 +1224,47 @@ create policy conversations_select on public.conversations
     or professional_id = auth.uid()
   );
 
+drop policy if exists conversations_insert_participant on public.conversations;
 create policy conversations_insert_participant on public.conversations
   for insert with check (
     customer_id = auth.uid() or professional_id = auth.uid() or public.is_admin()
   );
 
 -- messages
+drop policy if exists messages_select on public.messages;
 create policy messages_select on public.messages
   for select using (
     public.is_admin()
     or public.is_conversation_participant(conversation_id)
   );
 
+drop policy if exists messages_insert on public.messages;
 create policy messages_insert on public.messages
   for insert with check (
     sender_id = auth.uid()
     and public.is_conversation_participant(conversation_id)
   );
 
+drop policy if exists messages_update_read on public.messages;
 create policy messages_update_read on public.messages
   for update using (public.is_conversation_participant(conversation_id))
   with check (public.is_conversation_participant(conversation_id));
 
 -- credits: read own; writes only via security definer functions
+drop policy if exists credits_wallet_select on public.credits_wallet;
 create policy credits_wallet_select on public.credits_wallet
   for select using (profile_id = auth.uid() or public.is_admin());
 
+drop policy if exists credits_transactions_select on public.credits_transactions;
 create policy credits_transactions_select on public.credits_transactions
   for select using (wallet_id = auth.uid() or public.is_admin());
 
 -- reviews
+drop policy if exists reviews_select on public.reviews;
 create policy reviews_select on public.reviews
   for select using (true);
 
+drop policy if exists reviews_insert_customer on public.reviews;
 create policy reviews_insert_customer on public.reviews
   for insert with check (
     customer_id = auth.uid()
@@ -1141,26 +1277,32 @@ create policy reviews_insert_customer on public.reviews
     )
   );
 
+drop policy if exists reviews_admin on public.reviews;
 create policy reviews_admin on public.reviews
   for all using (public.is_admin())
   with check (public.is_admin());
 
 -- favorites
+drop policy if exists favorites_own on public.favorites;
 create policy favorites_own on public.favorites
   for all using (customer_id = auth.uid())
   with check (customer_id = auth.uid() and public.is_customer());
 
+drop policy if exists favorites_admin on public.favorites;
 create policy favorites_admin on public.favorites
   for select using (public.is_admin());
 
 -- notifications
+drop policy if exists notifications_own on public.notifications;
 create policy notifications_own on public.notifications
   for select using (profile_id = auth.uid() or public.is_admin());
 
+drop policy if exists notifications_update_own on public.notifications;
 create policy notifications_update_own on public.notifications
   for update using (profile_id = auth.uid())
   with check (profile_id = auth.uid());
 
+drop policy if exists notifications_insert_admin on public.notifications;
 create policy notifications_insert_admin on public.notifications
   for insert with check (public.is_admin() or profile_id = auth.uid());
 
@@ -1171,7 +1313,8 @@ create policy notifications_insert_admin on public.notifications
 insert into public.roles (slug, name) values
   ('customer', 'Customer'),
   ('professional', 'Professional'),
-  ('admin', 'Admin');
+  ('admin', 'Admin')
+on conflict (slug) do nothing;
 
 insert into public.categories (slug, name_en, name_hu, sort_order) values
   ('plumbing', 'Plumbing', 'Vízvezeték', 1),
@@ -1180,4 +1323,6 @@ insert into public.categories (slug, name_en, name_hu, sort_order) values
   ('hvac', 'HVAC', 'Klíma és fűtés', 4),
   ('cleaning', 'Cleaning', 'Takarítás', 5),
   ('handyperson', 'Handyperson', 'Ezermester', 6),
-  ('other', 'Other', 'Egyéb', 7);
+  ('handyman', 'Handyperson', 'Ezermester', 6),
+  ('other', 'Other', 'Egyéb', 7)
+on conflict (slug) do nothing;

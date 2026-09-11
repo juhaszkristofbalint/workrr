@@ -1,3 +1,4 @@
+import { JOB_CATEGORY_NAME, isJobCategorySlug } from "@/lib/jobs/categories";
 import type { Professional } from "@/types/marketplace";
 
 export type ProfessionalFilters = {
@@ -16,7 +17,14 @@ export function filterProfessionals(
 
   return professionals
     .filter((pro) => {
-      if (filters.category && pro.category !== filters.category) return false;
+      if (filters.category) {
+        const label = isJobCategorySlug(filters.category)
+          ? JOB_CATEGORY_NAME[filters.category]
+          : filters.category;
+        if (pro.category !== filters.category && pro.category !== label) {
+          return false;
+        }
+      }
       if (filters.maxKm != null && pro.distanceKm > filters.maxKm) return false;
       if (filters.minRating != null && pro.rating < filters.minRating) {
         return false;

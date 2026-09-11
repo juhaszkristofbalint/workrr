@@ -1,3 +1,4 @@
+import { JOB_CATEGORY_NAME, isJobCategorySlug } from "@/lib/jobs/categories";
 import { messages, type Messages } from "@/lib/i18n/messages";
 import type { AppLocale } from "@/lib/i18n/locale";
 
@@ -30,9 +31,12 @@ function lookup(tree: Messages, key: string): string | null {
 }
 
 export function categoryLabel(locale: AppLocale, category: string) {
-  return translate(locale, `category.${category}`) === `category.${category}`
-    ? category
-    : translate(locale, `category.${category}`);
+  const name = isJobCategorySlug(category)
+    ? JOB_CATEGORY_NAME[category]
+    : category;
+  return translate(locale, `category.${name}`) === `category.${name}`
+    ? name
+    : translate(locale, `category.${name}`);
 }
 
 export function jobStatusLabel(locale: AppLocale, status: string) {

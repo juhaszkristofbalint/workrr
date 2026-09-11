@@ -1,6 +1,7 @@
 "use server";
 
 import { requireRole } from "@/lib/auth/require-role";
+import { categoryLookupSlugs, isJobCategorySlug } from "@/lib/jobs/categories";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
@@ -14,55 +15,26 @@ const DURATION_MINUTES: Record<string, number> = {
   "Full day": 480,
 };
 
-function slugFromCategory(category: string) {
-  return category.trim().toLowerCase().replace(/\s+/g, "-");
-}
-
 function readCategory(formData: FormData) {
   const values = formData
     .getAll("category")
-    .map((value) => String(value).trim())
+    .map((value) => String(value).trim().toLowerCase())
     .filter(Boolean);
   return values.at(-1) ?? "";
 }
 
-function categoryMatches(
-  row: Record<string, unknown>,
-  slug: string,
-  needle: string,
-) {
-  const fields = ["slug", "name_en", "name_hu", "name", "title", "label"];
-  return fields.some((field) => {
-    const value = row[field];
-    if (typeof value !== "string") return false;
-    const normalized = value.trim().toLowerCase();
-    return normalized === needle || normalized === slug;
-  });
-}
-
 async function resolveCategoryId(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
-  category: string,
+  slug: string,
 ) {
-  const slug = slugFromCategory(category);
-  const needle = category.trim().toLowerCase();
-
-  const bySlug = await supabase
+  const slugs = categoryLookupSlugs(slug);
+  const { data } = await supabase
     .from("categories")
     .select("id")
-    .eq("slug", slug)
-    .maybeSingle();
-  if (bySlug.data?.id) return bySlug.data.id;
+    .in("slug", slugs)
+    .limit(1);
 
-  const full = await supabase.from("categories").select("*");
-  const match = (full.data ?? []).find((row) =>
-    categoryMatches(row as Record<string, unknown>, slug, needle),
-  );
-  if (match && "id" in match && typeof match.id === "string") {
-    return match.id;
-  }
-
-  return null;
+  return data?.[0]?.id ?? null;
 }
 
 async function revalidateJobSurfaces() {
@@ -106,8 +78,12 @@ export async function createJobAction(formData: FormData): Promise<CreateJobResu
   const lngRaw = String(formData.get("lng") ?? "").trim();
   const photos = formData.getAll("photos").filter(isUploadFile);
 
-  if (!title || !category || !description || !address) {
+  if (!title || !description || !address) {
     return { ok: false, error: "missing" };
+  }
+
+  if (!isJobCategorySlug(category)) {
+    return { ok: false, error: "category" };
   }
 
   if (!isSupabaseConfigured()) {
@@ -118,7 +94,7 @@ export async function createJobAction(formData: FormData): Promise<CreateJobResu
   const categoryId = await resolveCategoryId(supabase, category);
 
   if (!categoryId) {
-    return { ok: false, error: "category" };
+    return { ok: false, error: "save" };
   }
 
   await supabase.from("customer_profiles").upsert(
