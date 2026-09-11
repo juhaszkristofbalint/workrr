@@ -4,7 +4,7 @@ import { Button, Field, Input, Textarea } from "@/components/ui";
 import { useT } from "@/components/i18n/locale-provider";
 import { offerCreditCost } from "@/lib/credits";
 import { cn } from "@/lib/cn";
-import type { NearbyJob } from "@/lib/data/nearby-jobs";
+import type { NearbyJob } from "@/types/jobs";
 import { useEffect, useId, useMemo, useState } from "react";
 
 const DURATION_KEYS = [
@@ -31,7 +31,10 @@ export function SubmitOfferModal({
   job: NearbyJob;
   credits: number;
   onClose: () => void;
-  onSubmitted: (featured: boolean) => void;
+  onSubmitted: (
+    featured: boolean,
+    draft: OfferDraft,
+  ) => boolean | Promise<boolean>;
 }) {
   const t = useT();
   const titleId = useId();
@@ -42,6 +45,7 @@ export function SubmitOfferModal({
   const canAfford = remainingAfter >= 0;
   const [step, setStep] = useState<"form" | "confirm">("form");
   const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
   const [draft, setDraft] = useState<OfferDraft>({
     price: "",
     date: minDate,
@@ -259,7 +263,16 @@ export function SubmitOfferModal({
               >
                 {t("offer.edit")}
               </Button>
-              <Button className="flex-1" onClick={() => onSubmitted(featured)}>
+              <Button
+                className="flex-1"
+                disabled={pending}
+                onClick={async () => {
+                  setPending(true);
+                  const ok = await onSubmitted(featured, draft);
+                  setPending(false);
+                  if (!ok) setStep("form");
+                }}
+              >
                 {t("offer.confirm", { n: cost })}
               </Button>
             </>

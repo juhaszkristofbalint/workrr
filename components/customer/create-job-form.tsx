@@ -1,12 +1,13 @@
 "use client";
 
-import { CameraIcon, MapPinIcon } from "@/components/icons";
+import { CameraIcon } from "@/components/icons";
 import { useLocale, useT } from "@/components/i18n/locale-provider";
 import { Button, Field, Input, Switch, Textarea } from "@/components/ui";
-import { JOB_CATEGORIES, SAVED_ADDRESSES } from "@/lib/jobs/categories";
+import { JOB_CATEGORIES } from "@/lib/jobs/categories";
 import { createJobAction } from "@/lib/jobs/actions";
 import { categoryLabel } from "@/lib/i18n/translate";
 import { cn } from "@/lib/cn";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 type Photo = { id: string; url: string; file: File };
@@ -20,6 +21,7 @@ export function CreateJobForm({
 }) {
   const t = useT();
   const { locale } = useLocale();
+  const router = useRouter();
   const cameraRef = useRef<HTMLInputElement>(null);
   const libraryRef = useRef<HTMLInputElement>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -30,6 +32,9 @@ export function CreateJobForm({
     "idle",
   );
   const [emergency, setEmergency] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [formError, setFormError] = useState(error ?? "");
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     if (openCamera) {
@@ -88,9 +93,37 @@ export function CreateJobForm({
   const hero = photos[0];
   const today = new Date().toISOString().slice(0, 10);
 
-  function submit(formData: FormData) {
+  function errorMessage(code: string) {
+    if (code === "unavailable") return t("createJob.errorUnavailable");
+    if (code === "category") return t("createJob.errorCategory");
+    if (code === "save") return t("createJob.errorSave");
+    if (code === "photos") return t("createJob.errorPhotos");
+    return t("createJob.error");
+  }
+
+  async function submit(formData: FormData) {
+    if (!category) {
+      setFormError(t("createJob.error"));
+      setSuccess("");
+      return;
+    }
+
     photos.forEach((photo) => formData.append("photos", photo.file));
-    return createJobAction(formData);
+    setPending(true);
+    setFormError("");
+    setSuccess("");
+
+    const result = await createJobAction(formData);
+    setPending(false);
+
+    if (!result.ok) {
+      setFormError(errorMessage(result.error));
+      return;
+    }
+
+    setSuccess(t("createJob.success"));
+    router.push("/customer/jobs?created=1");
+    router.refresh();
   }
 
   return (
@@ -187,9 +220,18 @@ export function CreateJobForm({
       </section>
 
       <div className="flex flex-col gap-5 px-5">
-        {error ? (
+        {formError ? (
           <p className="rounded-lg bg-danger/10 px-3 py-2 text-footnote text-danger">
-            {t("createJob.error")}
+            {["missing", "unavailable", "category", "save", "photos"].includes(
+              formError,
+            )
+              ? errorMessage(formError)
+              : formError}
+          </p>
+        ) : null}
+        {success ? (
+          <p className="rounded-lg bg-success-soft px-3 py-2 text-footnote text-success">
+            {success}
           </p>
         ) : null}
 
@@ -233,24 +275,6 @@ export function CreateJobForm({
 
         <div className="flex flex-col gap-2">
           <p className="text-footnote font-medium text-muted">{t("createJob.address")}</p>
-          <div className="flex flex-col gap-2">
-            {SAVED_ADDRESSES.map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => setAddress(item)}
-                className={cn(
-                  "flex min-h-11 items-center gap-2 rounded-lg px-3 text-left text-subhead",
-                  address === item
-                    ? "bg-primary/10 text-primary"
-                    : "bg-fill text-foreground",
-                )}
-              >
-                <MapPinIcon className="h-4 w-4 shrink-0" />
-                {item}
-              </button>
-            ))}
-          </div>
           <Input
             value={address}
             onChange={(event) => setAddress(event.target.value)}
@@ -299,12 +323,17 @@ export function CreateJobForm({
         <Button
           type="submit"
           size="lg"
+          disabled={pending}
           className={cn(
             "w-full",
             emergency && "bg-danger active:bg-danger/90",
           )}
         >
-          {emergency ? t("createJob.submitEmergency") : t("createJob.submit")}
+          {pending
+            ? t("createJob.sending")
+            : emergency
+              ? t("createJob.submitEmergency")
+              : t("createJob.submit")}
         </Button>
       </div>
     </form>

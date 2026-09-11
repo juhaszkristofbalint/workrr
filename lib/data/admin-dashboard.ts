@@ -30,14 +30,6 @@ export const recentRegistrations = [
   { id: "u5", name: "Chris Bell", role: "Customer", when: "8 Sep", city: "North Yard" },
 ];
 
-export const recentJobs = [
-  { id: "j1", title: "Kitchen outlet sparking", status: "Active", party: "Sam Patel → Maya Chen", when: "Today" },
-  { id: "j2", title: "Locked out of apartment", status: "Active", party: "Noah Kim → Kenji Sato", when: "Today" },
-  { id: "j3", title: "Leaking sink valve", status: "Active", party: "Jordan Hale → Luis Ortega", when: "Yesterday" },
-  { id: "j4", title: "Panel check", status: "Completed", party: "Riley Ng → Priya Shah", when: "8 Sep" },
-  { id: "j5", title: "AC not cooling", status: "Completed", party: "Elena Rossi → Nora Voss", when: "7 Sep" },
-];
-
 export const creditLedgerRows = [
   { id: "cl1", who: "Maya Chen", type: "Stripe", amount: 25, when: "Today · 10:02" },
   { id: "cl2", who: "Luis Ortega", type: "Admin add", amount: 10, when: "Today · 09:18" },

@@ -36,48 +36,7 @@ export const CREDIT_PACKS = [
   { id: "pack-50", credits: 50, price: 35, label: "Pro" },
 ] as const;
 
-export const seedCreditLedger: CreditEvent[] = [
-  {
-    id: "cr1",
-    type: "registration",
-    label: "Registration",
-    detail: "Welcome bonus",
-    delta: REGISTRATION_CREDIT_BONUS,
-    at: "1 Sep · 09:12",
-  },
-  {
-    id: "cr2",
-    type: "offer",
-    label: "Send offer",
-    detail: "Kitchen outlet sparking",
-    delta: -OFFER_CREDIT_COST,
-    at: "4 Sep · 11:04",
-  },
-  {
-    id: "cr3",
-    type: "offer",
-    label: "Send offer",
-    detail: "Locked out of apartment",
-    delta: -OFFER_CREDIT_COST,
-    at: "6 Sep · 18:22",
-  },
-  {
-    id: "cr4",
-    type: "featured",
-    label: "Featured offer",
-    detail: "Panel check before renovation",
-    delta: -FEATURED_OFFER_CREDIT_COST,
-    at: "7 Sep · 10:40",
-  },
-  {
-    id: "cr5",
-    type: "offer",
-    label: "Send offer",
-    detail: "Leaking sink valve",
-    delta: -OFFER_CREDIT_COST,
-    at: "8 Sep · 14:18",
-  },
-];
+export const seedCreditLedger: CreditEvent[] = [];
 
 export function ledgerBalance(events: CreditEvent[]) {
   return events.reduce((sum, event) => sum + event.delta, 0);

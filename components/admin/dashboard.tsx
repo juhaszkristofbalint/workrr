@@ -9,13 +9,14 @@ import {
   grantProfessionals,
   jobsActiveByWeek,
   jobsCompletedByWeek,
-  recentJobs,
   recentRegistrations,
   registrationSeries,
   revenueByWeek,
   weekLabels,
 } from "@/lib/data/admin-dashboard";
+import { EMPTY_JOBS_MESSAGE } from "@/lib/jobs/empty";
 import { cn } from "@/lib/cn";
+import type { JobListRow } from "@/types/jobs";
 
 const statusTone: Record<string, string> = {
   Active: "bg-accent/15 text-primary",
@@ -26,7 +27,7 @@ const statusTone: Record<string, string> = {
   "Admin add": "bg-warning-soft text-warning",
 };
 
-export function AdminDashboard() {
+export function AdminDashboard({ jobs }: { jobs: JobListRow[] }) {
   const kpis = adminKpis.filter((item) => item.id !== "creditAdd");
 
   return (
@@ -147,13 +148,15 @@ export function AdminDashboard() {
         <DataTable
           title="Jobs"
           headers={["Job", "Parties", "Status", "When"]}
-          rows={recentJobs.map((row) => [
+          empty={EMPTY_JOBS_MESSAGE}
+          rows={jobs.map((row) => [
             row.title,
-            row.party,
-            <Badge key={row.id} className={statusTone[row.status]}>
+            [row.customerName, row.assignedProfessional].filter(Boolean).join(" → ") ||
+              "—",
+            <Badge key={row.id} className={statusTone[row.status] ?? "bg-fill text-label"}>
               {row.status}
             </Badge>,
-            row.when,
+            row.posted,
           ])}
         />
       </div>
@@ -177,10 +180,12 @@ function DataTable({
   title,
   headers,
   rows,
+  empty,
 }: {
   title: string;
   headers: string[];
   rows: React.ReactNode[][];
+  empty?: string;
 }) {
   return (
     <Card className="overflow-hidden p-0">
@@ -199,21 +204,32 @@ function DataTable({
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, index) => (
-              <tr key={index} className="border-t border-separator">
-                {row.map((cell, cellIndex) => (
-                  <td
-                    key={cellIndex}
-                    className={cn(
-                      "px-5 py-3 text-label",
-                      cellIndex === 0 && "font-semibold text-foreground",
-                    )}
-                  >
-                    {cell}
-                  </td>
-                ))}
+            {rows.length === 0 ? (
+              <tr className="border-t border-separator">
+                <td
+                  className="px-5 py-8 text-center text-subhead text-muted"
+                  colSpan={headers.length}
+                >
+                  {empty ?? EMPTY_JOBS_MESSAGE}
+                </td>
               </tr>
-            ))}
+            ) : (
+              rows.map((row, index) => (
+                <tr key={index} className="border-t border-separator">
+                  {row.map((cell, cellIndex) => (
+                    <td
+                      key={cellIndex}
+                      className={cn(
+                        "px-5 py-3 text-label",
+                        cellIndex === 0 && "font-semibold text-foreground",
+                      )}
+                    >
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

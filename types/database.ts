@@ -305,6 +305,7 @@ export type Database = {
           budget_min: number | null;
           budget_max: number | null;
           flagged: boolean;
+          photo_urls: string[];
           removed_at: string | null;
           removed_by: string | null;
           created_at: string;
@@ -327,6 +328,8 @@ export type Database = {
           budget_min?: number | null;
           budget_max?: number | null;
           flagged?: boolean;
+          photo_urls?: string[];
+          created_at?: string;
         };
         Update: {
           assigned_professional_id?: string | null;
@@ -342,6 +345,7 @@ export type Database = {
           budget_min?: number | null;
           budget_max?: number | null;
           flagged?: boolean;
+          photo_urls?: string[];
           removed_at?: string | null;
           removed_by?: string | null;
         };

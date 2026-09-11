@@ -1,15 +1,13 @@
 "use client";
 
 import { CameraShortcut } from "@/components/customer/camera-shortcut";
+import { EmptyJobsState } from "@/components/jobs/empty-jobs-state";
 import { useLocale, useT } from "@/components/i18n/locale-provider";
 import { MapPinIcon, PhoneIcon } from "@/components/icons";
 import { Badge, buttonClassName, Card } from "@/components/ui";
 import { jobStatusLabel } from "@/lib/i18n/translate";
-import {
-  emergencyServices,
-  nearbyProfessionals,
-  recentCustomerRequests,
-} from "@/lib/data/marketplace";
+import { emergencyServices, nearbyProfessionals } from "@/lib/data/marketplace";
+import type { JobListRow } from "@/types/jobs";
 import Link from "next/link";
 
 const statusTone: Record<string, string> = {
@@ -18,7 +16,13 @@ const statusTone: Record<string, string> = {
   "en route": "bg-warning-soft text-warning",
 };
 
-export function CustomerHome({ name }: { name: string }) {
+export function CustomerHome({
+  name,
+  jobs,
+}: {
+  name: string;
+  jobs: JobListRow[];
+}) {
   const t = useT();
   const { locale } = useLocale();
   const greetingName = name || t("customerHome.fallbackName");
@@ -61,25 +65,29 @@ export function CustomerHome({ name }: { name: string }) {
             {t("common.seeAll")}
           </Link>
         </div>
-        <ul className="flex flex-col gap-3">
-          {recentCustomerRequests.map((request) => (
-            <li key={request.id}>
-              <Link href={`/customer/jobs/${request.id}`}>
-                <Card className="flex items-start justify-between gap-3 active:scale-[0.99]">
-                  <div>
-                    <p className="text-subhead font-semibold">{request.title}</p>
-                    <p className="text-footnote text-muted">
-                      {request.trade} · {request.when}
-                    </p>
-                  </div>
-                  <Badge className={statusTone[request.status] ?? ""}>
-                    {jobStatusLabel(locale, request.status)}
-                  </Badge>
-                </Card>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        {jobs.length === 0 ? (
+          <EmptyJobsState />
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {jobs.map((request) => (
+              <li key={request.id}>
+                <Link href={`/customer/jobs/${request.id}`}>
+                  <Card className="flex items-start justify-between gap-3 active:scale-[0.99]">
+                    <div>
+                      <p className="text-subhead font-semibold">{request.title}</p>
+                      <p className="text-footnote text-muted">
+                        {request.category} · {request.posted}
+                      </p>
+                    </div>
+                    <Badge className={statusTone[request.status] ?? ""}>
+                      {jobStatusLabel(locale, request.status)}
+                    </Badge>
+                  </Card>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section aria-labelledby="nearby-heading">

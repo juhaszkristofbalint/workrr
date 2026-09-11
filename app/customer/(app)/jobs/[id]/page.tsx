@@ -1,6 +1,6 @@
 import { Tx } from "@/components/i18n/tx";
 import { JobDetails } from "@/components/customer/job-details";
-import { getCustomerJob, withAcceptedOffer } from "@/lib/data/jobs";
+import { getCustomerJob } from "@/lib/jobs/queries";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -14,11 +14,9 @@ export default async function CustomerJobDetailsPage({
   const { id } = await params;
   const query = await searchParams;
   const acceptedId = typeof query.accepted === "string" ? query.accepted : undefined;
+  const job = await getCustomerJob(id);
 
-  const found = getCustomerJob(id);
-  if (!found) notFound();
-
-  const job = acceptedId ? withAcceptedOffer(found, acceptedId) : found;
+  if (!job) notFound();
 
   return (
     <div className="flex flex-col gap-4">

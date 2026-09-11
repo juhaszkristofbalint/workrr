@@ -46,6 +46,7 @@ export function jobStatusLabel(locale: AppLocale, status: string) {
     confirmed: "status.confirmed",
     requested: "status.requested",
     cancelled: "status.cancelled",
+    removed: "status.cancelled",
   };
   const key = map[status];
   return key ? translate(locale, key) : status;

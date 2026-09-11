@@ -1,30 +1,30 @@
 "use client";
 
+import { EmptyJobsState } from "@/components/jobs/empty-jobs-state";
 import { Badge, Button, Card } from "@/components/ui";
-import {
-  moderatedJobs,
-  type ModeratedJob,
-  type ModeratedJobStatus,
-} from "@/lib/data/admin-jobs";
+import { removeJobAction } from "@/lib/jobs/actions";
 import { cn } from "@/lib/cn";
+import type { JobListRow } from "@/types/jobs";
 import { useMemo, useState } from "react";
 
-type StatusFilter = "all" | ModeratedJobStatus;
-type Dialog = { type: "remove"; job: ModeratedJob } | null;
+type StatusFilter = "all" | string;
+type Dialog = { type: "remove"; job: JobListRow } | null;
 
-const statusTone: Record<ModeratedJobStatus, string> = {
+const statusTone: Record<string, string> = {
   open: "bg-fill text-label",
   matched: "bg-primary/12 text-primary",
   "en route": "bg-accent/15 text-primary",
+  "in progress": "bg-accent/15 text-primary",
   completed: "bg-success-soft text-success",
+  cancelled: "bg-fill text-muted",
   removed: "bg-danger/10 text-danger",
 };
 
 const selectClass =
   "min-h-11 rounded-lg border border-separator bg-fill px-3 text-subhead outline-none focus:border-primary focus:ring-2 focus:ring-accent/40";
 
-export function JobsModeration() {
-  const [jobs, setJobs] = useState(moderatedJobs);
+export function JobsModeration({ jobs: initialJobs }: { jobs: JobListRow[] }) {
+  const [jobs, setJobs] = useState(initialJobs);
   const [status, setStatus] = useState<StatusFilter>("all");
   const [dialog, setDialog] = useState<Dialog>(null);
   const [preview, setPreview] = useState<{ src: string; alt: string } | null>(
@@ -70,6 +70,7 @@ export function JobsModeration() {
             <option value="open">Open</option>
             <option value="matched">Matched</option>
             <option value="en route">En route</option>
+            <option value="in progress">In progress</option>
             <option value="completed">Completed</option>
             <option value="removed">Removed</option>
           </select>
@@ -121,7 +122,7 @@ export function JobsModeration() {
                   Customer
                 </dt>
                 <dd className="mt-1 text-subhead font-semibold">
-                  {job.customerName}
+                  {job.customerName || "—"}
                 </dd>
               </div>
               <div className="rounded-xl bg-fill px-4 py-3">
@@ -134,42 +135,38 @@ export function JobsModeration() {
               </div>
             </dl>
 
-            <div>
-              <p className="mb-2 text-caption font-semibold uppercase tracking-wide text-muted">
-                Photos
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {job.photos.map((photo) => (
-                  <button
-                    key={photo.src + photo.alt}
-                    type="button"
-                    aria-label={`View photo: ${photo.alt}`}
-                    className="overflow-hidden rounded-xl border border-separator bg-fill"
-                    onClick={() =>
-                      setPreview({ src: photo.src, alt: photo.alt })
-                    }
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photo.src}
-                      alt={photo.alt}
-                      className="h-24 w-32 object-cover"
-                    />
-                  </button>
-                ))}
+            {job.photos.length ? (
+              <div>
+                <p className="mb-2 text-caption font-semibold uppercase tracking-wide text-muted">
+                  Photos
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {job.photos.map((photo) => (
+                    <button
+                      key={photo.src + photo.alt}
+                      type="button"
+                      aria-label={`View photo: ${photo.alt}`}
+                      className="overflow-hidden rounded-xl border border-separator bg-fill"
+                      onClick={() =>
+                        setPreview({ src: photo.src, alt: photo.alt })
+                      }
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photo.src}
+                        alt={photo.alt}
+                        className="h-24 w-32 object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : null}
           </Card>
         ))}
       </div>
 
-      {visible.length === 0 ? (
-        <Card>
-          <p className="px-5 py-8 text-center text-footnote text-muted">
-            No jobs match this status.
-          </p>
-        </Card>
-      ) : null}
+      {visible.length === 0 ? <EmptyJobsState /> : null}
 
       {dialog?.type === "remove" ? (
         <ConfirmDialog
@@ -177,15 +174,18 @@ export function JobsModeration() {
           body={`${dialog.job.title} will be taken down and hidden from customers and professionals.`}
           confirmLabel="Remove job"
           onClose={() => setDialog(null)}
-          onConfirm={() => {
-            setJobs((current) =>
-              current.map((job) =>
-                job.id === dialog.job.id
-                  ? { ...job, status: "removed", flagged: false }
-                  : job,
-              ),
-            );
-            setNotice(`Removed "${dialog.job.title}".`);
+          onConfirm={async () => {
+            const result = await removeJobAction(dialog.job.id);
+            if (result.ok) {
+              setJobs((current) =>
+                current.map((job) =>
+                  job.id === dialog.job.id
+                    ? { ...job, status: "removed", flagged: false }
+                    : job,
+                ),
+              );
+              setNotice(`Removed "${dialog.job.title}".`);
+            }
             setDialog(null);
           }}
         />
@@ -233,7 +233,7 @@ function ConfirmDialog({
   body: string;
   confirmLabel: string;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
 }) {
   return (
     <div

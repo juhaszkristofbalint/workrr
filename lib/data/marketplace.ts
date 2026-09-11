@@ -1,30 +1,8 @@
 import type {
-  ActiveJob,
-  Booking,
-  CustomerRequest,
   EmergencyService,
   ProDashboardStats,
-  ProNotification,
   Professional,
-  ServiceRequest,
 } from "@/types/marketplace";
-
-export const recentCustomerRequests: CustomerRequest[] = [
-  {
-    id: "c1",
-    title: "Kitchen outlet sparking",
-    trade: "Electrician",
-    when: "2h ago",
-    status: "matched",
-  },
-  {
-    id: "c2",
-    title: "Leaking sink valve",
-    trade: "Plumber",
-    when: "Yesterday",
-    status: "open",
-  },
-];
 
 export const emergencyServices: EmergencyService[] = [
   { id: "e1", name: "Emergency", detail: "Police, fire, ambulance", tel: "112" },
@@ -144,113 +122,6 @@ export const nearbyProfessionals: Professional[] = [
     available: true,
     mapX: 36,
     mapY: 58,
-  },
-];
-
-export const customerBookings: Booking[] = [
-  {
-    id: "b1",
-    professionalName: "Maya Chen",
-    customerName: "Jordan Hale",
-    trade: "Electrician",
-    when: "Thu 11 · 10:00",
-    status: "confirmed",
-  },
-  {
-    id: "b2",
-    professionalName: "Luis Ortega",
-    customerName: "Jordan Hale",
-    trade: "Plumber",
-    when: "Sat 13 · 09:00",
-    status: "requested",
-  },
-];
-
-export const incomingRequests: ServiceRequest[] = [
-  {
-    id: "r1",
-    title: "Kitchen outlet sparking",
-    customerName: "Sam Patel",
-    trade: "Electrical",
-    neighborhood: "North Yard",
-    when: "Today · 16:00",
-    budget: "$120–160",
-    distanceKm: 0.9,
-    isNew: true,
-  },
-  {
-    id: "r2",
-    title: "Panel check before renovation",
-    customerName: "Riley Ng",
-    trade: "Electrical",
-    neighborhood: "Central",
-    when: "Tomorrow · 09:30",
-    budget: "$90–140",
-    distanceKm: 1.8,
-    isNew: true,
-  },
-  {
-    id: "r3",
-    title: "Leaking sink valve",
-    customerName: "Jordan Hale",
-    trade: "Plumbing",
-    neighborhood: "Harbor St",
-    when: "Today · 18:00",
-    budget: "$80–110",
-    distanceKm: 2.3,
-    isNew: false,
-  },
-  {
-    id: "r4",
-    title: "AC not cooling upstairs",
-    customerName: "Elena Rossi",
-    trade: "HVAC",
-    neighborhood: "East Dock",
-    when: "Fri · 11:00",
-    budget: "$150–220",
-    distanceKm: 3.6,
-    isNew: true,
-  },
-];
-
-export const proNotifications: ProNotification[] = [
-  {
-    id: "n1",
-    title: "New job nearby",
-    detail: "Kitchen outlet sparking · 0.9 km",
-    time: "4m ago",
-    unread: true,
-  },
-  {
-    id: "n2",
-    title: "New job nearby",
-    detail: "AC not cooling upstairs · 3.6 km",
-    time: "22m ago",
-    unread: true,
-  },
-  {
-    id: "n3",
-    title: "Offer viewed",
-    detail: "Riley Ng opened your panel-check quote.",
-    time: "1h ago",
-    unread: false,
-  },
-];
-
-export const activeProJobs: ActiveJob[] = [
-  {
-    id: "a1",
-    title: "Outlet install",
-    customerName: "Sam Patel",
-    when: "Thu 11 · 10:00",
-    status: "accepted",
-  },
-  {
-    id: "a2",
-    title: "GFCI replacement",
-    customerName: "Chris Bell",
-    when: "Today · 16:00",
-    status: "en route",
   },
 ];
 

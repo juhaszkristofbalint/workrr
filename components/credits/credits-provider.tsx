@@ -18,7 +18,7 @@ import {
   useState,
 } from "react";
 
-const STORAGE_KEY = "workrr-credit-ledger";
+const STORAGE_KEY = "workrr-credit-ledger-v2";
 
 function readStoredLedger(): CreditEvent[] | null {
   try {
