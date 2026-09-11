@@ -14,7 +14,6 @@ type Photo = { id: string; url: string; file: File };
 
 export function CreateJobForm({
   openCamera = false,
-  error,
 }: {
   openCamera?: boolean;
   error?: string;
@@ -33,7 +32,7 @@ export function CreateJobForm({
   );
   const [emergency, setEmergency] = useState(false);
   const [pending, setPending] = useState(false);
-  const [formError, setFormError] = useState(error ?? "");
+  const [formError, setFormError] = useState("");
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
@@ -101,13 +100,25 @@ export function CreateJobForm({
     return t("createJob.error");
   }
 
+  function selectCategory(item: (typeof JOB_CATEGORIES)[number]) {
+    setCategory(item);
+    setFormError((current) =>
+      current === "category" || current === t("createJob.errorCategory")
+        ? ""
+        : current,
+    );
+  }
+
   async function submit(formData: FormData) {
     if (!category) {
-      setFormError(t("createJob.error"));
+      setFormError("category");
       setSuccess("");
       return;
     }
 
+    formData.set("category", category);
+    formData.set("address", address);
+    formData.set("emergency", emergency ? "true" : "false");
     photos.forEach((photo) => formData.append("photos", photo.file));
     setPending(true);
     setFormError("");
@@ -117,7 +128,7 @@ export function CreateJobForm({
     setPending(false);
 
     if (!result.ok) {
-      setFormError(errorMessage(result.error));
+      setFormError(result.error);
       return;
     }
 
@@ -128,7 +139,6 @@ export function CreateJobForm({
 
   return (
     <form action={submit} className="flex flex-col gap-6 pb-8">
-      <input type="hidden" name="category" value={category} />
       <input type="hidden" name="address" value={address} />
       <input type="hidden" name="emergency" value={emergency ? "true" : "false"} />
       {gps ? (
@@ -220,11 +230,9 @@ export function CreateJobForm({
       </section>
 
       <div className="flex flex-col gap-5 px-5">
-        {formError ? (
+        {formError && formError !== "category" ? (
           <p className="rounded-lg bg-danger/10 px-3 py-2 text-footnote text-danger">
-            {["missing", "unavailable", "category", "save", "photos"].includes(
-              formError,
-            )
+            {["missing", "unavailable", "save", "photos"].includes(formError)
               ? errorMessage(formError)
               : formError}
           </p>
@@ -238,22 +246,36 @@ export function CreateJobForm({
         <div className="flex flex-col gap-2">
           <p className="text-footnote font-medium text-muted">{t("createJob.category")}</p>
           <div className="flex flex-wrap gap-2" role="group" aria-label={t("createJob.category")}>
-            {JOB_CATEGORIES.map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => setCategory(item)}
-                className={cn(
-                  "min-h-10 rounded-full px-3 text-footnote font-semibold",
-                  category === item
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-fill text-label",
-                )}
-              >
-                {categoryLabel(locale, item)}
-              </button>
-            ))}
+            {JOB_CATEGORIES.map((item) => {
+              const selected = category === item;
+              return (
+                <label
+                  key={item}
+                  className={cn(
+                    "inline-flex min-h-10 cursor-pointer items-center rounded-full px-3 text-footnote font-semibold",
+                    selected
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-fill text-label",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="category"
+                    value={item}
+                    checked={selected}
+                    onChange={() => selectCategory(item)}
+                    className="sr-only"
+                  />
+                  {categoryLabel(locale, item)}
+                </label>
+              );
+            })}
           </div>
+          {formError === "category" ? (
+            <p className="text-footnote text-danger">
+              {t("createJob.errorCategory")}
+            </p>
+          ) : null}
         </div>
 
         <Field label={t("createJob.shortTitle")}>

@@ -149,8 +149,8 @@ export const en = {
     preferredDate: "Preferred date",
     emergency: "Emergency",
     emergencyHint: "Prioritize this job for pros who take urgent work.",
-    submit: "Submit job",
-    submitEmergency: "Submit emergency job",
+    submit: "Publish job",
+    submitEmergency: "Publish emergency job",
   },
   search: {
     eyebrow: "Marketplace",
@@ -543,8 +543,8 @@ export const hu: Messages = {
     preferredDate: "Preferált dátum",
     emergency: "Sürgős",
     emergencyHint: "Elsőbbség azoknak, akik vállalnak sürgős munkát.",
-    submit: "Küldés",
-    submitEmergency: "Küldés",
+    submit: "Munka közzététele",
+    submitEmergency: "Munka közzététele",
   },
   search: {
     eyebrow: "Piactér",

@@ -18,6 +18,28 @@ function slugFromCategory(category: string) {
   return category.trim().toLowerCase().replace(/\s+/g, "-");
 }
 
+async function resolveCategoryId(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  category: string,
+) {
+  const slug = slugFromCategory(category);
+  const needle = category.trim().toLowerCase();
+  const { data } = await supabase
+    .from("categories")
+    .select("id, slug, name_en, name_hu");
+
+  const match = (data ?? []).find((row) => {
+    return (
+      row.slug === slug ||
+      row.slug === needle ||
+      row.name_en.toLowerCase() === needle ||
+      row.name_hu.toLowerCase() === needle
+    );
+  });
+
+  return match?.id ?? null;
+}
+
 async function revalidateJobSurfaces() {
   revalidatePath("/customer");
   revalidatePath("/customer/jobs");
@@ -68,15 +90,9 @@ export async function createJobAction(formData: FormData): Promise<CreateJobResu
   }
 
   const supabase = await createSupabaseServerClient();
-  const slug = slugFromCategory(category);
+  const categoryId = await resolveCategoryId(supabase, category);
 
-  const { data: categoryRow } = await supabase
-    .from("categories")
-    .select("id")
-    .or(`name_en.eq.${category},slug.eq.${slug}`)
-    .maybeSingle();
-
-  if (!categoryRow) {
+  if (!categoryId) {
     return { ok: false, error: "category" };
   }
 
@@ -114,7 +130,7 @@ export async function createJobAction(formData: FormData): Promise<CreateJobResu
   const { error } = await supabase.from("jobs").insert({
     id: jobId,
     customer_id: user.id,
-    category_id: categoryRow.id,
+    category_id: categoryId,
     title,
     description,
     address_text: address,
